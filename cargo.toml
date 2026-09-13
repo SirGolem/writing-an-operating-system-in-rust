@@ -1,8 +1,16 @@
 [[bin]]
+bench = false
 name = "operating-system"
 path = "source/main.rs"
+test = false
 
 [package]
 edition = "2024"
 name = "writing-an-operating-system-in-rust"
 version = "0.0.0"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
