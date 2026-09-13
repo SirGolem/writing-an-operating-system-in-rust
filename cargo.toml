@@ -1,0 +1,8 @@
+[[bin]]
+name = "operating-system"
+path = "source/main.rs"
+
+[package]
+edition = "2024"
+name = "writing-an-operating-system-in-rust"
+version = "0.0.0"
