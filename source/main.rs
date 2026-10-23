@@ -10,5 +10,14 @@ fn panic(_: &PanicInfo) -> ! {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+    let text_buffer = 0xB8000 as *mut u8;
+
+    for (index, &byte) in b"Hello, world!".iter().enumerate() {
+        unsafe {
+            *text_buffer.offset(index as isize * 2) = byte;
+            *text_buffer.offset(index as isize * 2 + 1) = 0xF;
+        }
+    }
+
     loop {}
 }
