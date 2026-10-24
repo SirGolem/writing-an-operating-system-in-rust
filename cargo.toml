@@ -6,6 +6,9 @@ test = false
 
 [dependencies]
 bootloader = "0.9.35"
+lazy_static = { features = ["spin_no_std"], version = "1.5.1" }
+spin = "0.12.3"
+volatile = "0.2.6"
 
 [package]
 edition = "2024"
