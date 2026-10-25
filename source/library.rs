@@ -1,12 +1,15 @@
 #![cfg_attr(test, no_main)]
+#![feature(abi_x86_interrupt)]
 #![feature(custom_test_frameworks)]
 #![no_std]
 #![reexport_test_harness_main = "test_main"]
 #![test_runner(crate::test_runner)]
 
+pub mod interrupts;
 pub mod serial;
 pub mod video_graphics_array_buffer;
 
+use crate::interrupts::initialize_interrupt_descriptor_table;
 use core::{any::type_name, panic::PanicInfo};
 use x86_64::instructions::port::Port;
 
@@ -23,6 +26,10 @@ pub fn exit_emulator(exit_code: EmulatorExitCode) -> () {
     };
 }
 
+pub fn initialize() -> () {
+    initialize_interrupt_descriptor_table();
+}
+
 #[cfg(test)]
 #[panic_handler]
 fn panic(information: &PanicInfo) -> ! {
@@ -32,6 +39,7 @@ fn panic(information: &PanicInfo) -> ! {
 #[cfg(test)]
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+    initialize();
     test_main();
     loop {}
 }

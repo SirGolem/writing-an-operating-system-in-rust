@@ -5,9 +5,10 @@
 #![test_runner(operating_system::test_runner)]
 
 use core::panic::PanicInfo;
-use operating_system::print_line;
 #[cfg(test)]
 use operating_system::test_panic_handler;
+use operating_system::{initialize, print_line};
+use x86_64::instructions::interrupts::int3;
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -26,8 +27,12 @@ fn panic(information: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     print_line!("Hello, world!");
 
+    initialize();
+    int3();
+
     #[cfg(test)]
     test_main();
 
+    print_line!("Execution continued after breakpoint.");
     loop {}
 }
