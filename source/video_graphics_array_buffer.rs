@@ -153,3 +153,31 @@ impl Write for Writer {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::video_graphics_array_buffer::{BUFFER_HEIGHT, WRITER};
+
+    #[test_case]
+    fn print_line() -> () {
+        print_line!("tests::print_line");
+    }
+
+    #[test_case]
+    fn print_line_multiple() -> () {
+        for _ in 0..256 {
+            print_line!("tests::print_line_multiple");
+        }
+    }
+
+    #[test_case]
+    fn print_line_output() -> () {
+        let string = "Single-line test string.";
+        print_line!("{string}");
+
+        for (index, character) in string.chars().enumerate() {
+            let screen_character = WRITER.lock().buffer.characters[BUFFER_HEIGHT - 2][index].read();
+            assert_eq!(char::from(screen_character.character), character);
+        }
+    }
+}
