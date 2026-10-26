@@ -8,7 +8,6 @@ use core::panic::PanicInfo;
 #[cfg(test)]
 use operating_system::test_panic_handler;
 use operating_system::{initialize, print_line};
-use x86_64::instructions::interrupts::int3;
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -28,11 +27,17 @@ pub extern "C" fn _start() -> ! {
     print_line!("Hello, world!");
 
     initialize();
-    int3();
+
+    #[allow(unconditional_recursion)]
+    fn cause_stack_overflow() -> () {
+        cause_stack_overflow();
+    }
+
+    cause_stack_overflow();
 
     #[cfg(test)]
     test_main();
 
-    print_line!("Execution continued after breakpoint.");
+    print_line!("Execution continued after stack overflow.");
     loop {}
 }

@@ -5,11 +5,11 @@
 #![reexport_test_harness_main = "test_main"]
 #![test_runner(crate::test_runner)]
 
+pub mod global_descriptor_table;
 pub mod interrupts;
 pub mod serial;
 pub mod video_graphics_array_buffer;
 
-use crate::interrupts::initialize_interrupt_descriptor_table;
 use core::{any::type_name, panic::PanicInfo};
 use x86_64::instructions::port::Port;
 
@@ -27,7 +27,8 @@ pub fn exit_emulator(exit_code: EmulatorExitCode) -> () {
 }
 
 pub fn initialize() -> () {
-    initialize_interrupt_descriptor_table();
+    global_descriptor_table::initialize();
+    interrupts::initialize();
 }
 
 #[cfg(test)]
