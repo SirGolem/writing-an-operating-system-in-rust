@@ -10,8 +10,9 @@ pub mod interrupts;
 pub mod serial;
 pub mod video_graphics_array_buffer;
 
+use crate::interrupts::PROGRAMMABLE_INTERRUPT_CONTROLLERS;
 use core::{any::type_name, panic::PanicInfo};
-use x86_64::instructions::port::Port;
+use x86_64::instructions::{self, hlt, port::Port};
 
 #[repr(u32)]
 pub enum EmulatorExitCode {
@@ -26,9 +27,17 @@ pub fn exit_emulator(exit_code: EmulatorExitCode) -> () {
     };
 }
 
+pub fn halt_loop() -> ! {
+    loop {
+        hlt();
+    }
+}
+
 pub fn initialize() -> () {
     global_descriptor_table::initialize();
     interrupts::initialize();
+    unsafe { PROGRAMMABLE_INTERRUPT_CONTROLLERS.lock().initialize() };
+    instructions::interrupts::enable();
 }
 
 #[cfg(test)]
@@ -42,7 +51,7 @@ fn panic(information: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     initialize();
     test_main();
-    loop {}
+    halt_loop();
 }
 
 pub trait Testable {
@@ -63,7 +72,7 @@ pub fn test_panic_handler(information: &PanicInfo) -> ! {
     serial_print_line!(": Fail");
     serial_print_line!("Error: {}", information);
     exit_emulator(EmulatorExitCode::Failure);
-    loop {}
+    halt_loop();
 }
 
 pub fn test_runner(tests: &[&dyn Testable]) -> () {

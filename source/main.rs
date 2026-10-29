@@ -7,13 +7,13 @@
 use core::panic::PanicInfo;
 #[cfg(test)]
 use operating_system::test_panic_handler;
-use operating_system::{initialize, print_line};
+use operating_system::{halt_loop, initialize, print_line};
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(information: &PanicInfo) -> ! {
     print_line!("{}", information);
-    loop {}
+    halt_loop();
 }
 
 #[cfg(test)]
@@ -28,16 +28,8 @@ pub extern "C" fn _start() -> ! {
 
     initialize();
 
-    #[allow(unconditional_recursion)]
-    fn cause_stack_overflow() -> () {
-        cause_stack_overflow();
-    }
-
-    cause_stack_overflow();
-
     #[cfg(test)]
     test_main();
 
-    print_line!("Execution continued after stack overflow.");
-    loop {}
+    halt_loop();
 }

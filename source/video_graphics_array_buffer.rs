@@ -2,6 +2,7 @@ use core::fmt::{Arguments, Result, Write};
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
+use x86_64::instructions::interrupts::without_interrupts;
 
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
@@ -65,7 +66,9 @@ impl ColorCode {
 
 #[doc(hidden)]
 pub fn _print(arguments: Arguments) -> () {
-    WRITER.lock().write_fmt(arguments).unwrap();
+    without_interrupts(|| {
+        WRITER.lock().write_fmt(arguments).unwrap();
+    });
 }
 
 #[macro_export]
@@ -157,6 +160,8 @@ impl Write for Writer {
 #[cfg(test)]
 mod tests {
     use crate::video_graphics_array_buffer::{BUFFER_HEIGHT, WRITER};
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts::without_interrupts;
 
     #[test_case]
     fn print_line() -> () {
@@ -173,11 +178,15 @@ mod tests {
     #[test_case]
     fn print_line_output() -> () {
         let string = "Single-line test string.";
-        print_line!("{string}");
 
-        for (index, character) in string.chars().enumerate() {
-            let screen_character = WRITER.lock().buffer.characters[BUFFER_HEIGHT - 2][index].read();
-            assert_eq!(char::from(screen_character.character), character);
-        }
+        without_interrupts(|| {
+            let mut writer = WRITER.lock();
+            writeln!(writer, "\n{string}").expect("Failed to write string.");
+
+            for (index, character) in string.chars().enumerate() {
+                let screen_character = writer.buffer.characters[BUFFER_HEIGHT - 2][index].read();
+                assert_eq!(char::from(screen_character.character), character);
+            }
+        });
     }
 }

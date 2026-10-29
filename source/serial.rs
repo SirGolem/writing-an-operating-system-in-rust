@@ -2,6 +2,7 @@ use core::fmt::{Arguments, Write};
 use lazy_static::lazy_static;
 use spin::Mutex;
 use uart_16550::{Config, Uart16550Tty, backend::PioBackend};
+use x86_64::instructions::interrupts::without_interrupts;
 
 lazy_static! {
     #[rustfmt::skip]
@@ -12,7 +13,9 @@ lazy_static! {
 
 #[doc(hidden)]
 pub fn _print(arguments: Arguments) -> () {
-    SERIAL.lock().write_fmt(arguments).expect("Failed to write to serial device.");
+    without_interrupts(|| {
+        SERIAL.lock().write_fmt(arguments).expect("Failed to write to serial device.");
+    });
 }
 
 #[macro_export]
