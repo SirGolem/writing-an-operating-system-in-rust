@@ -1,11 +1,12 @@
-use crate::{global_descriptor_table::DOUBLE_FAULT_INTERRUPT_STACK_TABLE_INDEX, print, print_line};
+use crate::{global_descriptor_table::DOUBLE_FAULT_INTERRUPT_STACK_TABLE_INDEX, halt_loop, print, print_line};
 use lazy_static::lazy_static;
 use pc_keyboard::{DecodedKey, HandleControl, PS2Keyboard, ScancodeSet1, layouts::Us104Key};
 use pic8259::ChainedPics;
 use spin::Mutex;
 use x86_64::{
     instructions::port::Port,
-    structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
+    registers::control::Cr2,
+    structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
 };
 
 pub const PROGRAMMABLE_INTERRUPT_CONTROLLER_OFFSETS: (u8, u8) = (32, 32 + 8);
@@ -23,6 +24,7 @@ lazy_static! {
         }
 
         interrupt_descriptor_table[InterruptIndex::Keyboard.value()].set_handler_fn(keyboard_handler);
+        interrupt_descriptor_table.page_fault.set_handler_fn(page_fault_handler);
         interrupt_descriptor_table[InterruptIndex::Timer.value()].set_handler_fn(timer_handler);
         interrupt_descriptor_table
     };
@@ -79,6 +81,14 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: InterruptStackFrame) ->
     }
 
     unsafe { PROGRAMMABLE_INTERRUPT_CONTROLLERS.lock().notify_end_of_interrupt(InterruptIndex::Keyboard.value()) };
+}
+
+extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, error_code: PageFaultErrorCode) -> () {
+    print_line!("Exception: Page fault.");
+    print_line!("Accessed Address: {:?}", Cr2::read());
+    print_line!("Error Code: {:?}", error_code);
+    print_line!("{stack_frame:#?}");
+    halt_loop();
 }
 
 extern "x86-interrupt" fn timer_handler(_stack_frame: InterruptStackFrame) -> () {
