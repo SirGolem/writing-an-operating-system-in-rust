@@ -7,10 +7,13 @@
 
 pub mod global_descriptor_table;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 pub mod video_graphics_array_buffer;
 
 use crate::interrupts::PROGRAMMABLE_INTERRUPT_CONTROLLERS;
+#[cfg(test)]
+use bootloader::{BootInfo, entry_point};
 use core::{any::type_name, panic::PanicInfo};
 use x86_64::instructions::{self, hlt, port::Port};
 
@@ -41,17 +44,18 @@ pub fn initialize() -> () {
 }
 
 #[cfg(test)]
-#[panic_handler]
-fn panic(information: &PanicInfo) -> ! {
-    test_panic_handler(information);
-}
-
+entry_point!(main);
 #[cfg(test)]
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+fn main(_boot_information: &'static BootInfo) -> ! {
     initialize();
     test_main();
     halt_loop();
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(information: &PanicInfo) -> ! {
+    test_panic_handler(information);
 }
 
 pub trait Testable {

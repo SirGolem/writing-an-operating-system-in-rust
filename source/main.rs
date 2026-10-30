@@ -4,11 +4,23 @@
 #![reexport_test_harness_main = "test_main"]
 #![test_runner(operating_system::test_runner)]
 
+use bootloader::{BootInfo, entry_point};
 use core::panic::PanicInfo;
 #[cfg(test)]
 use operating_system::test_panic_handler;
 use operating_system::{halt_loop, initialize, print_line};
-use x86_64::registers::control::Cr3;
+
+entry_point!(main);
+fn main(_boot_information: &'static BootInfo) -> ! {
+    print_line!("Hello, world!");
+
+    initialize();
+
+    #[cfg(test)]
+    test_main();
+
+    halt_loop();
+}
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -21,19 +33,4 @@ fn panic(information: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(information: &PanicInfo) -> ! {
     test_panic_handler(information);
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
-    print_line!("Hello, world!");
-
-    initialize();
-
-    let (level_four_page_table, _) = Cr3::read();
-    print_line!("Level Four Page Table: {:?}", level_four_page_table.start_address());
-
-    #[cfg(test)]
-    test_main();
-
-    halt_loop();
 }
