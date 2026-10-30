@@ -7,14 +7,14 @@ use x86_64::instructions::interrupts::without_interrupts;
 lazy_static! {
     #[rustfmt::skip]
     pub static ref SERIAL: Mutex<Uart16550Tty<PioBackend>> = Mutex::new(unsafe {
-        Uart16550Tty::new_port(0x3F8, Config::default(),).expect("Failed to initialize serial device.")
+        Uart16550Tty::new_port(0x3F8, Config::default()).expect("Failed to initialize serial device")
     });
 }
 
 #[doc(hidden)]
 pub fn _print(arguments: Arguments) -> () {
     without_interrupts(|| {
-        SERIAL.lock().write_fmt(arguments).expect("Failed to write to serial device.");
+        SERIAL.lock().write_fmt(arguments).expect("Failed to write to serial device");
     });
 }
 
