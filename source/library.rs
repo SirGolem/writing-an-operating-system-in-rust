@@ -5,6 +5,9 @@
 #![reexport_test_harness_main = "test_main"]
 #![test_runner(crate::test_runner)]
 
+extern crate alloc;
+
+pub mod allocator;
 pub mod global_descriptor_table;
 pub mod interrupts;
 pub mod memory;

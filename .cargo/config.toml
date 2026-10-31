@@ -5,6 +5,6 @@ target = "target.json"
 runner = "bootimage runner"
 
 [unstable]
-build-std = ["core"]
+build-std = ["alloc", "core"]
 build-std-features = ["compiler-builtins-mem"]
 json-target-spec = true
