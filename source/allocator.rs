@@ -1,4 +1,9 @@
-use linked_list_allocator::LockedHeap;
+pub mod bump;
+pub mod fixed_size_block;
+pub mod linked_list;
+
+use crate::allocator::fixed_size_block::FixedSizeBlockAllocator;
+use spin::{Mutex, MutexGuard};
 use x86_64::{
     VirtAddr,
     structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB, mapper::MapToError},
@@ -8,7 +13,11 @@ pub const HEAP_SIZE: usize = 100 * 1024;
 pub const HEAP_START_ADDRESS: usize = 0x4444_4444_0000;
 
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+
+fn align_up(address: usize, alignment: usize) -> usize {
+    (address + alignment - 1) & !(alignment - 1)
+}
 
 pub fn initialize_heap(
     frame_allocator: &mut impl FrameAllocator<Size4KiB>,
@@ -28,7 +37,23 @@ pub fn initialize_heap(
         unsafe { mapper.map_to(page, frame, flags, frame_allocator)?.flush() };
     }
 
-    unsafe { ALLOCATOR.lock().init(HEAP_START_ADDRESS, HEAP_SIZE) };
+    unsafe { ALLOCATOR.lock().initialize(HEAP_SIZE, HEAP_START_ADDRESS) };
 
     Ok(())
+}
+
+struct Locked<Value> {
+    value: Mutex<Value>,
+}
+
+impl<Value> Locked<Value> {
+    pub fn lock(&self) -> MutexGuard<'_, Value> {
+        self.value.lock()
+    }
+
+    pub const fn new(value: Value) -> Self {
+        Self {
+            value: Mutex::new(value),
+        }
+    }
 }
