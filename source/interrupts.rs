@@ -1,6 +1,8 @@
-use crate::{global_descriptor_table::DOUBLE_FAULT_INTERRUPT_STACK_TABLE_INDEX, halt_loop, print, print_line};
+use crate::{
+    global_descriptor_table::DOUBLE_FAULT_INTERRUPT_STACK_TABLE_INDEX, halt_loop, print, print_line,
+    task::keyboard::push_scan_code,
+};
 use lazy_static::lazy_static;
-use pc_keyboard::{DecodedKey, HandleControl, PS2Keyboard, ScancodeSet1, layouts::Us104Key};
 use pic8259::ChainedPics;
 use spin::Mutex;
 use x86_64::{
@@ -60,26 +62,9 @@ impl InterruptIndex {
 }
 
 extern "x86-interrupt" fn keyboard_handler(_stack_frame: InterruptStackFrame) -> () {
-    #[rustfmt::skip]
-    static KEYBOARD: Mutex<PS2Keyboard<Us104Key, ScancodeSet1>> = Mutex::new(PS2Keyboard::new(
-        ScancodeSet1::new(),
-        Us104Key,
-        HandleControl::Ignore,
-    ));
-
-    let mut keyboard = KEYBOARD.lock();
     let mut port = Port::new(0x60);
-
     let scan_code: u8 = unsafe { port.read() };
-    if let Ok(Some(key_event)) = keyboard.add_byte(scan_code) {
-        if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                | DecodedKey::RawKey(key) => print!("{key:?}"),
-                | DecodedKey::Unicode(character) => print!("{character}"),
-            }
-        }
-    }
-
+    push_scan_code(scan_code);
     unsafe { PROGRAMMABLE_INTERRUPT_CONTROLLERS.lock().notify_end_of_interrupt(InterruptIndex::Keyboard.value()) };
 }
 

@@ -12,6 +12,7 @@ pub mod global_descriptor_table;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
+pub mod task;
 pub mod video_graphics_array_buffer;
 
 use crate::interrupts::PROGRAMMABLE_INTERRUPT_CONTROLLERS;

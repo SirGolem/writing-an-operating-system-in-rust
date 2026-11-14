@@ -6,7 +6,6 @@
 
 extern crate alloc;
 
-use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{BootInfo, entry_point};
 use core::panic::PanicInfo;
 #[cfg(test)]
@@ -16,8 +15,18 @@ use operating_system::{
     halt_loop, initialize,
     memory::{self, BootInformationFrameAllocator},
     print_line,
+    task::{Task, executor::Executor, keyboard::print_key_presses},
 };
 use x86_64::VirtAddr;
+
+async fn asynchronous_number() -> u32 {
+    64
+}
+
+async fn asynchronous_number_task() -> () {
+    let number = asynchronous_number().await;
+    print_line!("Asynchronous Number: {number}");
+}
 
 entry_point!(main);
 fn main(boot_information: &'static BootInfo) -> ! {
@@ -30,25 +39,13 @@ fn main(boot_information: &'static BootInfo) -> ! {
     let mut memory_mapper = unsafe { memory::initialize(physical_memory_offset) };
     initialize_heap(&mut frame_allocator, &mut memory_mapper).expect("Failed to initialize heap");
 
-    let heap_value = Box::new(0);
-    print_line!("heap_value: {heap_value:p}");
-
-    let mut vector = Vec::new();
-    for index in 0..500 {
-        vector.push(index);
-    }
-    print_line!("vector: {:p}", vector.as_slice());
-
-    let reference_counted_vector = Rc::new(vec![1, 2, 3]);
-    let cloned_reference = reference_counted_vector.clone();
-    print_line!("Vector Reference Count: {}", Rc::strong_count(&cloned_reference));
-    drop(reference_counted_vector);
-    print_line!("Vector Reference Count: {}", Rc::strong_count(&cloned_reference));
-
     #[cfg(test)]
     test_main();
 
-    halt_loop();
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(asynchronous_number_task()));
+    executor.spawn(Task::new(print_key_presses()));
+    executor.run();
 }
 
 #[cfg(not(test))]
