@@ -11,6 +11,12 @@ series '[Writing an OS in Rust](https://os.phil-opp.com)'.
 - Code structure is slightly different due to personal preferences.
 - Some crates and features of nightly Rust have changed since the posts were last updated.
 
+## Repository Structure
+
+Because the series is linear, this repository is too. \
+The code for each post has its own commit and tag, with the same name as the corresponding post. \
+All other commit messages are prefixed to denote their type.
+
 ## Usage
 
 ### Prerequisites
